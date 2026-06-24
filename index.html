@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>실시간 질문 보드 (Google Form 연동)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 구글 Noto Sans KR 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f3f4f6;
+    }
+    /* 애니메이션 효과 */
+    .fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between py-8 px-4 sm:px-6 lg:px-8">
+
+  <!-- 메인 질문 보드 컨테이너 -->
+  <div class="max-w-lg w-full mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 fade-in">
+    
+    <!-- 블루-퍼플 상단 헤더 롤 (이미지와 동일한 고품격 그라데이션 스타일) -->
+    <div class="bg-gradient-to-br from-[#4c36cf] to-[#3f33b5] p-6 text-white relative">
+      <div class="inline-block bg-white/20 text-white text-[11px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full mb-3">
+        LIVE QUESTION BOARD
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight mb-2">강의 질문을 남겨보세요!</h1>
+      <p class="text-xs text-white/80 leading-relaxed">
+        질문하신 내용은 클라우드 실시간 대시보드 및 구글 드라이브 시트로 안전하게 연동 보관됩니다.
+      </p>
+    </div>
+
+    <!-- 숨겨진 IFrame (구글 폼 제출 후 페이지 리다이렉션을 막는 핵심 트릭) -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+    <!-- 질문 작성 폼 (전송 대상: 제공해주신 구글폼 ID 매핑) -->
+    <form 
+      id="questionForm" 
+      action="https://docs.google.com/forms/d/e/1FAIpQLScp-NIbg-9meJ1HyI1dl_1Zddc5JxG7TTb_BzVkvj7ZDLiEFQ/formResponse" 
+      method="POST" 
+      target="hidden_iframe" 
+      class="p-6 space-y-5"
+    >
+      
+      <!-- 1. 이름 입력 필드 -->
+      <div>
+        <label class="flex items-center text-sm font-bold text-slate-800 mb-2">
+          <!-- 👤 사용자 아이콘 -->
+          <svg class="w-4 h-4 mr-1.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          이름 (실명 입력)
+        </label>
+        <input 
+          type="text" 
+          id="nameInput" 
+          name="entry.2005620554" 
+          required 
+          placeholder="홍길동" 
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 transition placeholder-slate-300"
+        />
+      </div>
+
+      <!-- 2. 전화번호 입력 필드 -->
+      <div>
+        <label class="flex items-center text-sm font-bold text-slate-800 mb-2">
+          <!-- 📞 전화 아이콘 -->
+          <svg class="w-4 h-4 mr-1.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+          </svg>
+          전화번호 (연락 가능한 번호)
+        </label>
+        <input 
+          type="tel" 
+          id="phoneInput" 
+          name="entry.1166974658" 
+          required 
+          placeholder="010-1234-5678" 
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 transition placeholder-slate-300"
+        />
+        <p class="text-[11px] text-slate-400 mt-1.5 pl-1">질문에 보충 설명이나 피드백 전달을 위해 필요합니다.</p>
+      </div>
+
+      <!-- 3. 질문 내용 입력 필드 -->
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <label class="flex items-center text-sm font-bold text-slate-800">
+            <!-- 💬 말풍선 아이콘 -->
+            <svg class="w-4 h-4 mr-1.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+            </svg>
+            질문 내용
+          </label>
+          <span id="charCounter" class="text-xs text-slate-400">0 / 500자</span>
+        </div>
+        <textarea 
+          id="questionInput" 
+          name="entry.839337160" 
+          required 
+          maxlength="500"
+          placeholder="궁금하신 기술 스택, 커리어 질문, 수업 내용 관련 오류 해결 방법 등을 구체적으로 남겨주세요." 
+          rows="5"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 transition placeholder-slate-300 resize-none leading-relaxed"
+        ></textarea>
+      </div>
+
+      <!-- 제출 버튼 -->
+      <button 
+        type="submit" 
+        id="submitBtn"
+        class="w-full bg-[#523ded] hover:bg-[#4331cc] active:scale-[0.98] text-white py-4 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 transition-all duration-200 cursor-pointer"
+      >
+        <!-- 삼각형 송신 아이콘 -->
+        <svg class="w-4 h-4 transform rotate-90 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+        </svg>
+        질문 전달하기
+      </button>
+
+    </form>
+  </div>
+
+  <!-- 하단 안내사항 박스 -->
+  <div class="max-w-lg w-full mx-auto mt-4 bg-slate-100 rounded-2xl p-4 border border-slate-200/60 text-xs text-slate-600 space-y-1.5">
+    <div class="font-bold text-slate-800 flex items-center mb-1">
+      <span class="mr-1">💡</span> 안내사항
+    </div>
+    <div class="flex items-start">
+      <span class="mr-1.5">•</span>
+      <span>클라우드 데이터베이스 및 구글 드라이브 스프레드시트에 즉각 백업 동기화가 적용됩니다.</span>
+    </div>
+    <div class="flex items-start">
+      <span class="mr-1.5">•</span>
+      <span>질문이 완료된 뒤에도 페이지 새로고침 없이 계속해서 추가 질문을 전달하실 수 있습니다.</span>
+    </div>
+  </div>
+
+
+  <!-- [모달 1] 제출 성공 알림 모달 -->
+  <div id="successModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 transform scale-95 transition-all duration-300">
+      <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <!-- 체크 아이콘 -->
+        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-bold text-slate-800 mb-2">질문이 정상 접수되었습니다!</h3>
+      <p class="text-slate-500 text-sm leading-relaxed mb-6">
+        작성해주신 소중한 질문이 구글 시트로 즉각 연동 전송되었습니다.
+      </p>
+      <button 
+        onclick="closeSuccessModal()" 
+        class="w-full bg-[#523ded] hover:bg-[#4331cc] text-white py-3.5 px-6 rounded-xl font-bold transition cursor-pointer"
+      >
+        확인
+      </button>
+    </div>
+  </div>
+
+
+  <!-- 자바스크립트 로직 제어 -->
+  <script>
+    let formSubmitted = false;
+
+    // 앱 기동 시 이벤트 초기화
+    window.onload = function() {
+      setupCharacterCounter();
+      
+      // Iframe 로드 핸들러 동적 바인딩
+      const iframe = document.getElementById('hidden_iframe');
+      if (iframe) {
+        iframe.onload = handleIframeLoad;
+      }
+    };
+
+    // 캐릭터 카운터 기능 실시간 작동
+    function setupCharacterCounter() {
+      const questionInput = document.getElementById('questionInput');
+      const charCounter = document.getElementById('charCounter');
+      
+      questionInput.addEventListener('input', function() {
+        const length = questionInput.value.length;
+        charCounter.textContent = `${length} / 500자`;
+        
+        if (length >= 500) {
+          charCounter.className = "text-xs text-rose-500 font-semibold";
+        } else {
+          charCounter.className = "text-xs text-slate-400";
+        }
+      });
+    }
+
+    // 폼 전송 이벤트 감지 인터셉터
+    document.getElementById('questionForm').onsubmit = function() {
+      formSubmitted = true;
+      // 제출 로딩 인디케이터 표시
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 전송하는 중...`;
+    };
+
+    // 아이프레임 로드 완료 이벤트 핸들러 (제출 성공 여부 감지)
+    function handleIframeLoad() {
+      if (formSubmitted) {
+        formSubmitted = false;
+        
+        // 제출 완료 안내 모달 띄우기
+        const successModal = document.getElementById('successModal');
+        successModal.classList.remove('hidden');
+
+        // 입력 폼 초기화
+        document.getElementById('questionForm').reset();
+        document.getElementById('charCounter').textContent = "0 / 500자";
+
+        // 버튼 복구
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="w-4 h-4 transform rotate-90 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+          </svg>
+          질문 전달하기
+        `;
+      }
+    }
+
+    // 성공 안내 모달 닫기
+    function closeSuccessModal() {
+      const successModal = document.getElementById('successModal');
+      successModal.classList.add('hidden');
+    }
+  </script>
+
+</body>
+</html>
